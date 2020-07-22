@@ -6,11 +6,11 @@ import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 
-import com.loe.http.callback.FileCallback;
-import com.loe.http.callback.NetCallBack;
-import com.loe.http.callback.NetDealCallBack;
-import com.loe.http.callback.ProgressCallBack;
-import com.loe.http.callback.StringCallBack;
+import com.loe.http.callback.HttpFileCallback;
+import com.loe.http.callback.HttpCallBack;
+import com.loe.http.callback.HttpDealCallBack;
+import com.loe.http.callback.HttpProgressCallBack;
+import com.loe.http.callback.HttpStringCallBack;
 
 
 import org.json.JSONException;
@@ -52,7 +52,7 @@ public class LoeHttp
     private static final int ERROR = 2;
     private static final int PROGRESS = 3;
 
-    private static NetDealCallBack okBeanDealer;
+    private static HttpDealCallBack okBeanDealer;
 
     /**
      * 初始化
@@ -362,7 +362,7 @@ public class LoeHttp
         return sb.toString();
     }
 
-    public static void setOkBeanDealer(NetDealCallBack dealer)
+    public static void setOkBeanDealer(HttpDealCallBack dealer)
     {
         LoeHttp.okBeanDealer = dealer;
     }
@@ -375,9 +375,9 @@ public class LoeHttp
         private JSONObject paramJson;
         private HashMap<String, File> files;
         private String save;
-        private StringCallBack okCallback;
-        private StringCallBack errorCallback;
-        private ProgressCallBack progressCallBack;
+        private HttpStringCallBack okCallback;
+        private HttpStringCallBack errorCallback;
+        private HttpProgressCallBack progressCallBack;
         private boolean noDealer;
         private long now, len;
         private boolean isAutoName;
@@ -470,15 +470,15 @@ public class LoeHttp
             return this;
         }
 
-        public Link ok(StringCallBack callBack)
+        public Link ok(HttpStringCallBack callBack)
         {
             okCallback = callBack;
             return this;
         }
 
-        public Link okBean(final NetCallBack callBack)
+        public Link okBean(final HttpCallBack callBack)
         {
-            okCallback = new StringCallBack()
+            okCallback = new HttpStringCallBack()
             {
                 @Override
                 public void logic(String s)
@@ -499,13 +499,13 @@ public class LoeHttp
             return stringMap(params);
         }
 
-        public Link error(StringCallBack callBack)
+        public Link error(HttpStringCallBack callBack)
         {
             errorCallback = callBack;
             return this;
         }
 
-        public Link progress(ProgressCallBack callBack)
+        public Link progress(HttpProgressCallBack callBack)
         {
             progressCallBack = callBack;
             return this;
@@ -676,7 +676,7 @@ public class LoeHttp
             // 保存
             if (url.startsWith(HttpFileUtil.ASSETS))
             {
-                HttpFileUtil.assetsToFile(url, path, new FileCallback()
+                HttpFileUtil.assetsToFile(url, path, new HttpFileCallback()
                 {
                     @Override
                     public void onChange(long len, long now)

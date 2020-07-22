@@ -5,7 +5,7 @@ import java.io.File;
 /**
  * Created by zls on 2016/12/20.
  */
-public abstract class FileCallback extends ResultCallback
+public abstract class HttpFileCallback extends HttpResultCallback
 {
     /**
      * 文件

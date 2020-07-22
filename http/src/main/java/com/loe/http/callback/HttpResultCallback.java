@@ -3,7 +3,7 @@ package com.loe.http.callback;
 /**
  * Created by zls on 2016/12/20.
  */
-public abstract class ResultCallback
+public abstract class HttpResultCallback
 {
     /**
      * 请求结果

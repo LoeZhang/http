@@ -3,13 +3,13 @@ package com.loe.http;
 import android.content.Context;
 import android.os.Environment;
 
-import com.loe.http.callback.FileCallback;
+import com.loe.http.callback.HttpFileCallback;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 
-public class HttpFileUtil
+class HttpFileUtil
 {
 
     public static final String ASSETS = "file:///android_asset/";
@@ -50,7 +50,7 @@ public class HttpFileUtil
     /**
      * 保存文件
      */
-    public static void assetsToFile(String path, String nPath, final FileCallback fileCallback)
+    public static void assetsToFile(String path, String nPath, final HttpFileCallback fileCallback)
     {
         final String oldPath = path.replace(ASSETS, "");
         final String newPath = nPath + oldPath;

@@ -16,7 +16,7 @@ class MainActivity : AppCompatActivity()
         {
             LoeHttp.get("172.16.1.25/test/version2.json").okBean()
             {
-                textView.text = it.msg
+                textView.text = it.gotDoubleString("isForce")
             }
         }
     }

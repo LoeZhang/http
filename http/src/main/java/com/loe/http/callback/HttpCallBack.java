@@ -2,7 +2,7 @@ package com.loe.http.callback;
 
 import com.loe.http.NetBean;
 
-public interface NetCallBack
+public interface HttpCallBack
 {
     void result(NetBean bean);
 }
