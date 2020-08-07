@@ -154,7 +154,7 @@ public class NetBean
         } catch (Exception e)
         {
         }
-        return new JSONObject();
+        return o;
     }
 
     public JSONArray gotArray(String key)
@@ -169,7 +169,7 @@ public class NetBean
         } catch (Exception e)
         {
         }
-        return new JSONArray();
+        return o;
     }
 
     ////////////////////////////////////////////////////////////
@@ -253,7 +253,7 @@ public class NetBean
         } catch (Exception e)
         {
         }
-        return new JSONObject();
+        return o;
     }
 
     public JSONArray gotArray(int i)
@@ -268,7 +268,7 @@ public class NetBean
         } catch (Exception e)
         {
         }
-        return new JSONArray();
+        return o;
     }
 
 
