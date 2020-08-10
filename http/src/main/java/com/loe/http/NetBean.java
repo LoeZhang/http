@@ -6,6 +6,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import okhttp3.Response;
+
 /**
  * Created by zls
  */
@@ -45,6 +47,8 @@ public class NetBean
     public JSONObject data;
     public JSONArray array;
     public String string;
+
+    public Response response;
 
     public NetBean(String resultString)
     {
@@ -295,6 +299,24 @@ public class NetBean
     public int size()
     {
         return array.length();
+    }
+
+    public String getHeader(String key)
+    {
+        if(response != null)
+        {
+            response.header(key, "");
+        }
+        return "";
+    }
+
+    public String getHeaderString()
+    {
+        if(response != null)
+        {
+            response.headers().toString();
+        }
+        return "";
     }
 
     @Override

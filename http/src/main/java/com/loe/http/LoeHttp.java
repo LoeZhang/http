@@ -370,7 +370,7 @@ public class LoeHttp
     public static class Link
     {
         private String url;
-        private HashMap<String, String> headers;
+        private Map<String, Object> headers;
         private HashMap<String, Object> params;
         private JSONObject paramJson;
         private HashMap<String, File> files;
@@ -383,6 +383,7 @@ public class LoeHttp
         private boolean isAutoName;
 
         private String result;
+        private Response response;
 
         public Link(String url)
         {
@@ -484,6 +485,7 @@ public class LoeHttp
                 public void logic(String s)
                 {
                     final NetBean bean = new NetBean(s);
+                    bean.response = response;
                     if (okBeanDealer != null && !noDealer)
                     {
                         okBeanDealer.result(Link.this, bean);
@@ -497,6 +499,11 @@ public class LoeHttp
         public String getParamString()
         {
             return stringMap(params);
+        }
+
+        public String getHeaderString()
+        {
+            return stringMap(headers);
         }
 
         public Link error(HttpStringCallBack callBack)
@@ -519,11 +526,11 @@ public class LoeHttp
                 return this;
             }
             Request.Builder builder = new Request.Builder().url(buildUrl(url, params));
-            for (Map.Entry<String, String> entry : headers.entrySet())
+            for (Map.Entry<String, Object> entry : headers.entrySet())
             {
                 try
                 {
-                    builder.addHeader(entry.getKey(), entry.getValue());
+                    builder.addHeader(entry.getKey(), entry.getValue().toString());
                 } catch (Exception e)
                 {
                 }
@@ -533,6 +540,7 @@ public class LoeHttp
                 @Override
                 public void onResponse(Call call, Response response) throws IOException
                 {
+                    Link.this.response = response;
                     result = response.body().string();
                     Message msg = new Message();
                     msg.what = OK;
@@ -608,11 +616,11 @@ public class LoeHttp
             }
 
             Request.Builder builder = new Request.Builder().url(url).post(body);
-            for (Map.Entry<String, String> entry : headers.entrySet())
+            for (Map.Entry<String, Object> entry : headers.entrySet())
             {
                 try
                 {
-                    builder.addHeader(entry.getKey(), entry.getValue());
+                    builder.addHeader(entry.getKey(), entry.getValue().toString());
                 } catch (Exception e)
                 {
                 }
@@ -622,6 +630,7 @@ public class LoeHttp
                 @Override
                 public void onResponse(Call call, Response response) throws IOException
                 {
+                    Link.this.response = response;
                     result = response.body().string();
                     Message msg = new Message();
                     msg.what = OK;
@@ -711,11 +720,11 @@ public class LoeHttp
             }
 
             Request.Builder builder = new Request.Builder().url(buildUrl(url, params));
-            for (Map.Entry<String, String> entry : headers.entrySet())
+            for (Map.Entry<String, Object> entry : headers.entrySet())
             {
                 try
                 {
-                    builder.addHeader(entry.getKey(), entry.getValue());
+                    builder.addHeader(entry.getKey(), entry.getValue().toString());
                 } catch (Exception e)
                 {
                 }
@@ -725,6 +734,7 @@ public class LoeHttp
                 @Override
                 public void onResponse(Call call, Response response)
                 {
+                    Link.this.response = response;
                     Message msg = new Message();
                     saveFile(result, response, Link.this);
                     msg.what = OK;
