@@ -305,7 +305,7 @@ public class NetBean
     {
         if(response != null)
         {
-            response.header(key, "");
+            return response.header(key, "");
         }
         return "";
     }
@@ -314,7 +314,7 @@ public class NetBean
     {
         if(response != null)
         {
-            response.headers().toString();
+            return response.headers().toString();
         }
         return "";
     }
