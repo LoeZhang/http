@@ -216,7 +216,7 @@ public class LoeHttp
                 fos = new FileOutputStream(file, true);
                 // 临时读取长度
                 int l;
-                while ((l = is.read(buffer)) != -1)
+                while (!link.isEnd && (l = is.read(buffer)) != -1)
                 {
                     now += l;
                     nowRate += l;
@@ -232,18 +232,22 @@ public class LoeHttp
                         handler.sendMessage(message);
                     }
                 }
-                // 发送进度至UI线程
-                Message message = new Message();
-                link.now = now;
-                message.obj = link;
-                message.what = PROGRESS;
                 fos.flush();
                 is.close();
                 fos.close();
-                file = HttpFileUtil.renameAll(file, path);
-                handler.sendMessage(message);
+                if(!link.isEnd)
+                {
+                    // 发送进度至UI线程
+                    Message message = new Message();
+                    link.now = now;
+                    message.obj = link;
+                    message.what = PROGRESS;
+                    file = HttpFileUtil.renameAll(file, path);
+                    handler.sendMessage(message);
+                }
             } catch (Exception e)
             {
+                file = null;
                 try
                 {
                     if (is != null)
@@ -384,6 +388,8 @@ public class LoeHttp
 
         private String result;
         private Response response;
+
+        private boolean isEnd = false;
 
         public Link(String url)
         {
@@ -540,27 +546,33 @@ public class LoeHttp
                 @Override
                 public void onResponse(Call call, Response response) throws IOException
                 {
-                    Link.this.response = response;
-                    result = response.body().string();
-                    Message msg = new Message();
-                    msg.what = OK;
-                    msg.obj = Link.this;
-                    handler.sendMessage(msg);
+                    if(!isEnd)
+                    {
+                        Link.this.response = response;
+                        result = response.body().string();
+                        Message msg = new Message();
+                        msg.what = OK;
+                        msg.obj = Link.this;
+                        handler.sendMessage(msg);
+                    }
                 }
 
                 @Override
                 public void onFailure(Call call, IOException e)
                 {
-                    String s = e.getMessage();
-                    if (s.contains("timed out"))
+                    if(!isEnd)
                     {
-                        s = "连接超时";
+                        String s = e.getMessage();
+                        if (s.contains("timed out"))
+                        {
+                            s = "连接超时";
+                        }
+                        result = s.isEmpty() ? e.toString() : s;
+                        Message msg = new Message();
+                        msg.what = ERROR;
+                        msg.obj = Link.this;
+                        handler.sendMessage(msg);
                     }
-                    result = s.isEmpty() ? e.toString() : s;
-                    Message msg = new Message();
-                    msg.what = ERROR;
-                    msg.obj = Link.this;
-                    handler.sendMessage(msg);
                 }
             });
             return this;
@@ -630,27 +642,33 @@ public class LoeHttp
                 @Override
                 public void onResponse(Call call, Response response) throws IOException
                 {
-                    Link.this.response = response;
-                    result = response.body().string();
-                    Message msg = new Message();
-                    msg.what = OK;
-                    msg.obj = Link.this;
-                    handler.sendMessage(msg);
+                    if(!isEnd)
+                    {
+                        Link.this.response = response;
+                        result = response.body().string();
+                        Message msg = new Message();
+                        msg.what = OK;
+                        msg.obj = Link.this;
+                        handler.sendMessage(msg);
+                    }
                 }
 
                 @Override
                 public void onFailure(Call call, IOException e)
                 {
-                    String s = e.getMessage();
-                    if (s.contains("timed out"))
+                    if(!isEnd)
                     {
-                        s = "连接超时";
+                        String s = e.getMessage();
+                        if (s.contains("timed out"))
+                        {
+                            s = "连接超时";
+                        }
+                        result = s.isEmpty() ? e.toString() : s;
+                        Message msg = new Message();
+                        msg.what = ERROR;
+                        msg.obj = Link.this;
+                        handler.sendMessage(msg);
                     }
-                    result = s.isEmpty() ? e.toString() : s;
-                    Message msg = new Message();
-                    msg.what = ERROR;
-                    msg.obj = Link.this;
-                    handler.sendMessage(msg);
                 }
             });
             return this;
@@ -690,30 +708,39 @@ public class LoeHttp
                     @Override
                     public void onChange(long len, long now)
                     {
-                        Link.this.len = len;
-                        Link.this.now = now;
-                        Message msg = new Message();
-                        msg.what = PROGRESS;
-                        msg.obj = Link.this;
-                        handler.sendMessage(msg);
+                        if(!isEnd)
+                        {
+                            Link.this.len = len;
+                            Link.this.now = now;
+                            Message msg = new Message();
+                            msg.what = PROGRESS;
+                            msg.obj = Link.this;
+                            handler.sendMessage(msg);
+                        }
                     }
 
                     @Override
                     public void response(File file)
                     {
-                        Message msg = new Message();
-                        msg.what = OK;
-                        msg.obj = Link.this;
-                        handler.sendMessage(msg);
+                        if(!isEnd)
+                        {
+                            Message msg = new Message();
+                            msg.what = OK;
+                            msg.obj = Link.this;
+                            handler.sendMessage(msg);
+                        }
                     }
 
                     @Override
                     public void error()
                     {
-                        Message msg = new Message();
-                        msg.what = ERROR;
-                        msg.obj = Link.this;
-                        handler.sendMessage(msg);
+                        if(!isEnd)
+                        {
+                            Message msg = new Message();
+                            msg.what = ERROR;
+                            msg.obj = Link.this;
+                            handler.sendMessage(msg);
+                        }
                     }
                 });
                 return this;
@@ -734,26 +761,51 @@ public class LoeHttp
                 @Override
                 public void onResponse(Call call, Response response)
                 {
-                    Link.this.response = response;
-                    Message msg = new Message();
-                    saveFile(result, response, Link.this);
-                    msg.what = OK;
-                    msg.obj = Link.this;
-                    handler.sendMessage(msg);
+                    if(!isEnd)
+                    {
+                        Link.this.response = response;
+                        Message msg = new Message();
+                        if(saveFile(result, response, Link.this) != null)
+                        {
+                            if(!isEnd)
+                            {
+                                msg.what = OK;
+                                msg.obj = Link.this;
+                                handler.sendMessage(msg);
+                            }
+                        }else
+                        {
+                            if(!isEnd)
+                            {
+                                result = "下载出错";
+                                msg.what = ERROR;
+                                msg.obj = Link.this;
+                                handler.sendMessage(msg);
+                            }
+                        }
+                    }
                 }
 
                 @Override
                 public void onFailure(Call call, IOException e)
                 {
-                    String s = e.getMessage();
-                    result = s.isEmpty() ? e.toString() : s;
-                    Message msg = new Message();
-                    msg.what = ERROR;
-                    msg.obj = Link.this;
-                    handler.sendMessage(msg);
+                    if(!isEnd)
+                    {
+                        String s = e.getMessage();
+                        result = s.isEmpty() ? e.toString() : s;
+                        Message msg = new Message();
+                        msg.what = ERROR;
+                        msg.obj = Link.this;
+                        handler.sendMessage(msg);
+                    }
                 }
             });
             return this;
+        }
+
+        public void end()
+        {
+            isEnd = true;
         }
     }
 }
