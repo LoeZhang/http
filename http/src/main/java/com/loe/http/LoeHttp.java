@@ -232,6 +232,7 @@ public class LoeHttp
                         handler.sendMessage(message);
                     }
                 }
+                response.close();
                 fos.flush();
                 is.close();
                 fos.close();
