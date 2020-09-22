@@ -315,7 +315,7 @@ public class LoeHttp
     /**
      * 清除down文件夹
      */
-    private static void clearDown()
+    public static void clearDown()
     {
         HttpFileUtil.delete(new File(HttpFileUtil.basePath + "down/"));
     }
