@@ -9,7 +9,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 
-class HttpFileUtil
+public class HttpFileUtil
 {
 
     public static final String ASSETS = "file:///android_asset/";

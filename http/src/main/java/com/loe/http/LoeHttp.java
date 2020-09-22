@@ -312,6 +312,14 @@ public class LoeHttp
         return buffer;
     }
 
+    /**
+     * 清除down文件夹
+     */
+    private static void clearDown()
+    {
+        HttpFileUtil.delete(new File(HttpFileUtil.basePath + "down/"));
+    }
+
     private static Handler handler = new Handler(Looper.getMainLooper())
     {
         @Override
