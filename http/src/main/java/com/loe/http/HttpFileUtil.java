@@ -50,10 +50,9 @@ public class HttpFileUtil
     /**
      * 保存文件
      */
-    public static void assetsToFile(String path, String nPath, final HttpFileCallback fileCallback)
+    public static void assetsToFile(String path, final String nPath, final HttpFileCallback fileCallback)
     {
         final String oldPath = path.replace(ASSETS, "");
-        final String newPath = nPath + oldPath;
 
         new Thread()
         {
@@ -66,7 +65,7 @@ public class HttpFileUtil
                 {
                     InputStream is = context.getAssets().open(oldPath);
 
-                    file = new File(newPath);
+                    file = new File(nPath);
                     // 如果文件存在则删除
                     if (file.exists())
                     {
