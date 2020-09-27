@@ -219,6 +219,13 @@ public class HttpFileUtil
     public static File renameAll(File file, String newPath)
     {
         File newFile = new File(newPath);
+        if (!newFile.exists())
+        {
+            if (!newFile.getParentFile().exists())
+            {
+                newFile.getParentFile().mkdirs();
+            }
+        }
         file.renameTo(newFile);
         return newFile;
     }

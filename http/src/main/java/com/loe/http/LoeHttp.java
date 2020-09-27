@@ -178,8 +178,10 @@ public class LoeHttp
      */
     private static File saveFile(String path, long maxLen, Response response, Link link)
     {
+        File file = null;
         // 输出文件流
         RandomAccessFile randomAccessFile = null;
+        File tempFile2 = null;
         // 网络输入流
         InputStream is = null;
         BufferedInputStream bis = null;
@@ -209,23 +211,31 @@ public class LoeHttp
                 bis = new BufferedInputStream(is);
                 // 网络输入缓存
                 byte[] buffer = new byte[2048];
-                File tempFile = HttpFileUtil.getTemp(path, link.tempFlag);
-                if (!tempFile.exists())
+                tempFile2 = HttpFileUtil.getTemp(path, link.tempFlag);
+                if (!tempFile2.exists())
                 {
-                    if (!tempFile.getParentFile().exists())
+                    if (!tempFile2.getParentFile().exists())
                     {
-                        tempFile.getParentFile().mkdirs();
+                        tempFile2.getParentFile().mkdirs();
                     }
                 }
+                // 清理temp
+                if(maxLen < 0 && tempFile2.exists())
+                {
+                    tempFile2.delete();
+                }
 
-                long fl = tempFile.length();
+                long fl = tempFile2.length();
                 now = fl > 0 ? fl - 1 : fl;
                 link.now = now;
                 // 判断是否已下载完成
                 if(now < len)
                 {
-                    randomAccessFile = new RandomAccessFile(tempFile, "rw");
-                    randomAccessFile.seek(now);
+                    randomAccessFile = new RandomAccessFile(tempFile2, "rw");
+                    if(now > 0)
+                    {
+                        randomAccessFile.seek(now);
+                    }
                     // 临时读取长度
                     int l;
                     while (!link.isEnd && (l = bis.read(buffer)) > 0)
@@ -256,13 +266,14 @@ public class LoeHttp
                     link.now = now;
                     message.obj = link;
                     message.what = PROGRESS;
-                    HttpFileUtil.renameAll(tempFile, path);
+                    file = HttpFileUtil.renameAll(tempFile2, path);
                     handler.sendMessage(message);
                     // 完成后清理temp
                     HttpFileUtil.clearTemp();
                 }
             } catch (Exception e)
             {
+                file = null;
                 try
                 {
                     if (is != null)
@@ -287,7 +298,7 @@ public class LoeHttp
                 }
             }
         }
-        return null;
+        return file;
     }
 
     private static Handler handler = new Handler(Looper.getMainLooper())
