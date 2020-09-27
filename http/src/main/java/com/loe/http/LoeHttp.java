@@ -16,10 +16,12 @@ import com.loe.http.callback.HttpStringCallBack;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.RandomAccessFile;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -175,21 +177,29 @@ public class LoeHttp
     /**
      * 保存文件
      */
-    private static File saveFile(String path, Response response, Link link)
+    private static File saveFile(String path, long maxLen, Response response, Link link)
     {
-        File file = null;
         // 输出文件流
-        FileOutputStream fos = null;
+        RandomAccessFile randomAccessFile = null;
         // 网络输入流
         InputStream is = null;
+        BufferedInputStream bis = null;
         // 如果文件链接成功
         if (response.isSuccessful())
         {
             try
             {
                 // 网络输入流总长度
-                final long len = response.body().contentLength();
+                final long len = maxLen > 0 ? maxLen : response.body().contentLength();
                 link.len = len;
+
+                // 判断剩余空间
+                if(HttpFileUtil.getAvailableStorage() < len)
+                {
+                    link.result = "剩余空间不足";
+                    return null;
+                }
+
                 // 设置进度灵敏度
                 final long dRate = len / changeTime - 1;
                 long nowRate = 0;
@@ -197,45 +207,49 @@ public class LoeHttp
                 long now = 0;
                 // 网络输入流
                 is = response.body().byteStream();
+                bis = new BufferedInputStream(is);
                 // 网络输入缓存
-                byte[] buffer = initBuffer(len);
-                file = new File(path + ".temp");
-                // 如果文件存在
-                if (file.exists())
+                byte[] buffer = new byte[2048];
+                File tempFile = HttpFileUtil.getTemp(path, link.tempFlag);
+                if (!tempFile.exists())
                 {
-                    file.delete();
-                }
-                else
-                // 如果文件夹路径不存在，则创建路径
-                {
-                    if (!file.getParentFile().exists())
+                    if (!tempFile.getParentFile().exists())
                     {
-                        file.getParentFile().mkdirs();
+                        tempFile.getParentFile().mkdirs();
                     }
                 }
-                fos = new FileOutputStream(file, true);
-                // 临时读取长度
-                int l;
-                while (!link.isEnd && (l = is.read(buffer)) != -1)
+
+                long fl = tempFile.length();
+                now = fl > 0 ? fl - 1 : fl;
+                link.now = now;
+                // 判断是否已下载完成
+                if(now < len)
                 {
-                    now += l;
-                    nowRate += l;
-                    fos.write(buffer, 0, l);
-                    if (nowRate > dRate)
+                    randomAccessFile = new RandomAccessFile(tempFile, "rw");
+                    randomAccessFile.seek(now);
+                    // 临时读取长度
+                    int l;
+                    while (!link.isEnd && (l = bis.read(buffer)) > 0)
                     {
-                        nowRate = 0;
-                        // 发送进度至UI线程
-                        Message message = new Message();
-                        link.now = now;
-                        message.obj = link;
-                        message.what = PROGRESS;
-                        handler.sendMessage(message);
+                        now += l;
+                        nowRate += l;
+                        randomAccessFile.write(buffer, 0, l);
+                        if (nowRate > dRate)
+                        {
+                            nowRate = 0;
+                            // 发送进度至UI线程
+                            Message message = new Message();
+                            link.now = now;
+                            message.obj = link;
+                            message.what = PROGRESS;
+                            handler.sendMessage(message);
+                        }
                     }
+                    randomAccessFile.close();
                 }
                 response.close();
-                fos.flush();
                 is.close();
-                fos.close();
+                bis.close();
                 if(!link.isEnd)
                 {
                     // 发送进度至UI线程
@@ -243,73 +257,36 @@ public class LoeHttp
                     link.now = now;
                     message.obj = link;
                     message.what = PROGRESS;
-                    file = HttpFileUtil.renameAll(file, path);
+                    HttpFileUtil.renameAll(tempFile, path);
                     handler.sendMessage(message);
                 }
             } catch (Exception e)
             {
-                file = null;
                 try
                 {
                     if (is != null)
                     {
                         is.close();
                     }
+                    if (bis != null)
+                    {
+                        bis.close();
+                    }
                 } catch (Exception e0)
                 {
                 }
                 try
                 {
-                    if (fos != null)
+                    if (randomAccessFile != null)
                     {
-                        fos.close();
+                        randomAccessFile.close();
                     }
                 } catch (Exception e0)
                 {
                 }
             }
         }
-        return file;
-    }
-
-    /**
-     * 获取适当的缓存
-     */
-    private static byte[] initBuffer(long len)
-    {
-        final int K = 1024;
-        final int M = 1024 * 1024;
-        byte[] buffer = null;
-        if (len < 128 * K)
-        {
-            buffer = new byte[5 * K];
-        }
-        else
-        {
-            if (len < 1 * M)
-            {
-                buffer = new byte[20 * K];
-            }
-            else
-            {
-                if (len < 8 * M)
-                {
-                    buffer = new byte[256 * K];
-                }
-                else
-                {
-                    if (len < 32 * M)
-                    {
-                        buffer = new byte[1 * M];
-                    }
-                    else
-                    {
-                        buffer = new byte[2 * M];
-                    }
-                }
-            }
-        }
-        return buffer;
+        return null;
     }
 
     /**
@@ -333,12 +310,14 @@ public class LoeHttp
                     switch (msg.what)
                     {
                         case OK:
+                            link.isEnd = true;
                             if (link.okCallback != null)
                             {
                                 link.okCallback.logic(link.result);
                             }
                             break;
                         case ERROR:
+                            link.isEnd = true;
                             if (link.errorCallback != null)
                             {
                                 link.errorCallback.logic(link.result);
@@ -347,13 +326,14 @@ public class LoeHttp
                         case PROGRESS:
                             if (link.progressCallBack != null)
                             {
-                                link.progressCallBack.onChange(link.now, link.len);
+                                link.progressCallBack.onChange(link.now, link.len, link.now * 100.0 / link.len);
                             }
                             break;
                     }
                 } catch (Exception e)
                 {
                     Log.e("HttpRuntime", e + "\nresult: " + link.result);
+                    link.isEnd = true;
                     if (link.errorCallback != null)
                     {
                         link.errorCallback.logic(e.toString());
@@ -394,11 +374,15 @@ public class LoeHttp
         private boolean noDealer;
         private long now, len;
         private boolean isAutoName;
+        private boolean isUseTemp = false;
+        private String tempFlag = "";
 
         private String result;
         private Response response;
 
         private boolean isEnd = false;
+
+        private long tempOutTime = 60 * 60 * 1000;
 
         public Link(String url)
         {
@@ -533,8 +517,27 @@ public class LoeHttp
             return this;
         }
 
+        public Link useTemp(boolean useTemp)
+        {
+            isUseTemp = useTemp;
+            return this;
+        }
+
+        public Link tempFlag(String flag)
+        {
+            tempFlag = flag;
+            return this;
+        }
+
+        public Link tempOutTime(long tempOutTime)
+        {
+            this.tempOutTime = tempOutTime;
+            return this;
+        }
+
         public Link get()
         {
+            isEnd = false;
             if (url == null || url.isEmpty())
             {
                 errorCallback.logic("url非法");
@@ -589,6 +592,7 @@ public class LoeHttp
 
         public Link post()
         {
+            isEnd = false;
             if (url == null || url.isEmpty())
             {
                 errorCallback.logic("url非法");
@@ -685,6 +689,7 @@ public class LoeHttp
 
         public Link getFile()
         {
+            isEnd = false;
             if (url == null || url.isEmpty())
             {
                 errorCallback.logic("url非法");
@@ -755,7 +760,7 @@ public class LoeHttp
                 return this;
             }
 
-            Request.Builder builder = new Request.Builder().url(buildUrl(url, params));
+            final Request.Builder builder = new Request.Builder().url(buildUrl(url, params));
             for (Map.Entry<String, Object> entry : headers.entrySet())
             {
                 try
@@ -765,6 +770,56 @@ public class LoeHttp
                 {
                 }
             }
+
+            // 如果temp文件存在
+            final File tempFile = HttpFileUtil.getTemp(path, tempFlag);
+            if (tempFile.exists() && tempFile.length() > 0)
+            {
+                // 不支持断点 或者 temp已过期
+                if(!isUseTemp || System.currentTimeMillis() - tempFile.lastModified() > tempOutTime )
+                {
+                    tempFile.delete();
+                    toGetFile(builder, -1);
+                    return this;
+                }
+                // 断点下载
+                httpClient.newCall(builder.build()).enqueue(new Callback()
+                {
+                    @Override
+                    public void onFailure(Call call, IOException e)
+                    {
+                        if(!isEnd)
+                        {
+                            String s = e.getMessage();
+                            result = s.isEmpty() ? e.toString() : s;
+                            Message msg = new Message();
+                            msg.what = ERROR;
+                            msg.obj = Link.this;
+                            handler.sendMessage(msg);
+                        }
+                    }
+
+                    @Override
+                    public void onResponse(Call call, Response response)
+                    {
+                        if(!isEnd)
+                        {
+                            long contentLength = response.body().contentLength();
+                            builder.addHeader("RANGE", "bytes=" + (tempFile.length()-1) + "-");
+                            response.close();
+                            toGetFile(builder, contentLength);
+                        }
+                    }
+                });
+            }else
+            {
+                toGetFile(builder, -1);
+            }
+            return this;
+        }
+
+        private void toGetFile(Request.Builder builder, final long maxLen)
+        {
             httpClient.newCall(builder.build()).enqueue(new Callback()
             {
                 @Override
@@ -774,7 +829,7 @@ public class LoeHttp
                     {
                         Link.this.response = response;
                         Message msg = new Message();
-                        if(saveFile(result, response, Link.this) != null)
+                        if(saveFile(result, maxLen, response, Link.this) != null)
                         {
                             if(!isEnd)
                             {
@@ -786,7 +841,10 @@ public class LoeHttp
                         {
                             if(!isEnd)
                             {
-                                result = "下载出错";
+                                if(result == null || result.isEmpty())
+                                {
+                                    result = "下载出错";
+                                }
                                 msg.what = ERROR;
                                 msg.obj = Link.this;
                                 handler.sendMessage(msg);
@@ -809,7 +867,11 @@ public class LoeHttp
                     }
                 }
             });
-            return this;
+        }
+
+        public boolean isEnd()
+        {
+            return isEnd;
         }
 
         public void end()

@@ -5,5 +5,5 @@ package com.loe.http.callback;
  */
 public interface HttpProgressCallBack
 {
-    void onChange(long now, long len);
+    void onChange(long now, long len, double p);
 }

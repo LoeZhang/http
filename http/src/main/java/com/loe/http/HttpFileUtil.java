@@ -2,6 +2,7 @@ package com.loe.http;
 
 import android.content.Context;
 import android.os.Environment;
+import android.os.StatFs;
 
 import com.loe.http.callback.HttpFileCallback;
 
@@ -17,6 +18,7 @@ public class HttpFileUtil
     public static Context context;
 
     public static String basePath = "/mnt/sdcard/";
+    public static String tempPath = "/mnt/sdcard/temp/";
 
     public static void init(Context context)
     {
@@ -28,6 +30,7 @@ public class HttpFileUtil
     {
         HttpFileUtil.context = context;
         basePath = getFilePath(appName);
+        tempPath = basePath + "temp/";
     }
 
     /**
@@ -145,6 +148,10 @@ public class HttpFileUtil
      */
     public static boolean delete(File file)
     {
+        if(!file.exists())
+        {
+            return true;
+        }
         if (file.isFile())
         {
             return file.delete();
@@ -170,6 +177,35 @@ public class HttpFileUtil
     }
 
     /**
+     * 创建temp
+     */
+    public static File getTemp(String path)
+    {
+        return getTemp(path, null);
+    }
+
+    public static File getTemp(String path, String flag)
+    {
+        if(flag == null || flag.isEmpty())
+        {
+            path = tempPath + getUrlNameExt(path) + ".temp";
+        }else
+        {
+            path = tempPath + getUrlNameExt(path) + "-" + flag + ".temp";
+        }
+        File file = new File(path);
+        return file;
+    }
+
+    /**
+     * 清理temp
+     */
+    public static boolean clearTemp()
+    {
+        return delete(new File(tempPath));
+    }
+
+    /**
      * 重命名
      */
     public static File renameAll(File file, String newPath)
@@ -177,5 +213,17 @@ public class HttpFileUtil
         File newFile = new File(newPath);
         file.renameTo(newFile);
         return newFile;
+    }
+
+    /**
+     * 获取剩余空间
+     */
+    public static long getAvailableStorage()
+    {
+        File file = Environment.getExternalStorageDirectory();//获取SD卡的目录
+        StatFs statfs = new StatFs(file.getAbsolutePath());
+        long count = statfs.getAvailableBlocks();
+        long size = statfs.getBlockSize();
+        return count * size;
     }
 }
