@@ -18,7 +18,6 @@ import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
@@ -259,6 +258,8 @@ public class LoeHttp
                     message.what = PROGRESS;
                     HttpFileUtil.renameAll(tempFile, path);
                     handler.sendMessage(message);
+                    // 完成后清理temp
+                    HttpFileUtil.clearTemp();
                 }
             } catch (Exception e)
             {
@@ -287,14 +288,6 @@ public class LoeHttp
             }
         }
         return null;
-    }
-
-    /**
-     * 清除down文件夹
-     */
-    public static void clearDown()
-    {
-        HttpFileUtil.delete(new File(HttpFileUtil.basePath + "down/"));
     }
 
     private static Handler handler = new Handler(Looper.getMainLooper())
@@ -778,7 +771,6 @@ public class LoeHttp
                 // 不支持断点 或者 temp已过期
                 if(!isUseTemp || System.currentTimeMillis() - tempFile.lastModified() > tempOutTime )
                 {
-                    tempFile.delete();
                     toGetFile(builder, -1);
                     return this;
                 }

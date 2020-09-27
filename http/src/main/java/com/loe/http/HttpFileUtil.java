@@ -198,7 +198,15 @@ public class HttpFileUtil
     }
 
     /**
-     * 清理temp
+     * 清除down文件夹
+     */
+    public static void clearDown()
+    {
+        delete(new File(basePath + "down/"));
+    }
+
+    /**
+     * 清理temp文件夹
      */
     public static boolean clearTemp()
     {
