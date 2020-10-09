@@ -5,6 +5,7 @@ import android.os.Environment;
 import android.os.StatFs;
 
 import com.loe.http.callback.HttpFileCallback;
+import com.loe.http.callback.HttpProgressCallBack;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -108,6 +109,56 @@ public class HttpFileUtil
     }
 
     /**
+     * 保存文件
+     */
+    public static File assetsToFile(String assetsPath, final String nPath) throws Exception
+    {
+        final String oldPath = assetsPath.replace(ASSETS, "");
+
+        File file = null;
+        FileOutputStream fos = null;
+        try
+        {
+            InputStream is = context.getAssets().open(oldPath);
+
+            file = new File(nPath);
+            // 如果文件存在则删除
+            if (file.exists())
+            {
+                delete(file);
+            }
+            // 如果文件夹路径不存在，则创建路径
+            if (!file.getParentFile().exists())
+            {
+                file.getParentFile().mkdirs();
+            }
+            fos = new FileOutputStream(file, true);
+            byte[] buffer = new byte[2048];
+            int byteCount = 0;
+            while ((byteCount = is.read(buffer)) != -1)
+            {
+                fos.write(buffer, 0, byteCount);
+            }
+            fos.flush();
+            is.close();
+            fos.close();
+            return file;
+        } catch (Exception e)
+        {
+            if (fos != null)
+            {
+                try
+                {
+                    fos.close();
+                } catch (Exception e0)
+                {
+                }
+            }
+        }
+        throw new Exception("assets转化出错");
+    }
+
+    /**
      * 获取扩展名
      */
     public static String getExtension(String path)
@@ -148,7 +199,7 @@ public class HttpFileUtil
      */
     public static boolean delete(File file)
     {
-        if(!file.exists())
+        if (!file.exists())
         {
             return true;
         }
@@ -186,10 +237,11 @@ public class HttpFileUtil
 
     public static File getTemp(String path, String flag)
     {
-        if(flag == null || flag.isEmpty())
+        if (flag == null || flag.isEmpty())
         {
             path = tempPath + getUrlNameExt(path) + ".temp";
-        }else
+        }
+        else
         {
             path = tempPath + getUrlNameExt(path) + "-" + flag + ".temp";
         }

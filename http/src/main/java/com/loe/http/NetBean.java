@@ -50,6 +50,12 @@ public class NetBean
 
     public Response response;
 
+    public static final int ERROR_JSON = -604725097;
+    public static final int ERROR_LINK = -704725097;
+
+    public static String ERROR_JSON_MSG = "数据格式有误";
+    public static String ERROR_LINK_MSG = "网络连接失败";
+
     public NetBean(String resultString)
     {
         this.resultString = resultString;
@@ -68,9 +74,9 @@ public class NetBean
 
         } catch (JSONException e)
         {
-            msg = "JSON解析出错";
-            code = -804725097;
-            codeString = "-804725097";
+            msg = ERROR_JSON_MSG;
+            code = ERROR_JSON;
+            codeString = ERROR_JSON + "";
             success = false;
             string = resultString;
         }

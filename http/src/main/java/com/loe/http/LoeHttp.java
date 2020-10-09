@@ -195,7 +195,7 @@ public class LoeHttp
                 link.len = len;
 
                 // 判断剩余空间
-                if(HttpFileUtil.getAvailableStorage() < len)
+                if (HttpFileUtil.getAvailableStorage() < len)
                 {
                     link.result = "剩余空间不足";
                     return null;
@@ -220,7 +220,7 @@ public class LoeHttp
                     }
                 }
                 // 清理temp
-                if(maxLen < 0 && tempFile2.exists())
+                if (maxLen < 0 && tempFile2.exists())
                 {
                     tempFile2.delete();
                 }
@@ -229,10 +229,10 @@ public class LoeHttp
                 now = fl > 0 ? fl - 1 : fl;
                 link.now = now;
                 // 判断是否已下载完成
-                if(now < len)
+                if (now < len)
                 {
                     randomAccessFile = new RandomAccessFile(tempFile2, "rw");
-                    if(now > 0)
+                    if (now > 0)
                     {
                         randomAccessFile.seek(now);
                     }
@@ -259,7 +259,7 @@ public class LoeHttp
                 response.close();
                 is.close();
                 bis.close();
-                if(!link.isEnd)
+                if (!link.isEnd)
                 {
                     // 发送进度至UI线程
                     Message message = new Message();
@@ -270,9 +270,13 @@ public class LoeHttp
                     handler.sendMessage(message);
                     // 完成后清理temp
                     HttpFileUtil.clearTemp();
+                }else
+                {
+                    link.result = "连接中断";
                 }
             } catch (Exception e)
             {
+                link.result = e.toString();
                 file = null;
                 try
                 {
@@ -395,11 +399,11 @@ public class LoeHttp
             files = new HashMap<>();
 
             String lower = url.toLowerCase();
-            if (!lower.startsWith("http:") && !lower.startsWith("https:") && !lower.startsWith("ftp:") && !lower
-                    .startsWith("file:"))
+            if (!lower.startsWith("http:") && !lower.startsWith("https:") && !lower.startsWith("ftp:") && !lower.startsWith("file:"))
             {
                 this.url = "http://" + url;
-            }else
+            }
+            else
             {
                 this.url = url;
             }
@@ -539,6 +543,237 @@ public class LoeHttp
             return this;
         }
 
+        /**
+         * 同步get请求
+         *
+         * @return
+         */
+        public Response syncResponseGet() throws IOException
+        {
+            Request.Builder builder = new Request.Builder().url(buildUrl(url, params));
+            for (Map.Entry<String, Object> entry : headers.entrySet())
+            {
+                try
+                {
+                    builder.addHeader(entry.getKey(), entry.getValue().toString());
+                } catch (Exception e)
+                {
+                }
+            }
+            return httpClient.newCall(builder.build()).execute();
+        }
+
+        /**
+         * 同步post请求
+         */
+        public Response syncResponsePost() throws IOException
+        {
+            RequestBody body;
+            if (files.isEmpty())
+            {
+                // Json模式
+                if (paramJson != null)
+                {
+                    MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+                    for (Map.Entry<String, Object> entry : params.entrySet())
+                    {
+                        try
+                        {
+                            paramJson.put(entry.getKey(), entry.getValue());
+                        } catch (JSONException e)
+                        {
+                            e.printStackTrace();
+                        }
+                    }
+                    body = RequestBody.create(JSON, paramJson.toString());
+                }
+                else
+                {
+                    FormBody.Builder builder = new FormBody.Builder();
+                    for (Map.Entry<String, Object> entry : params.entrySet())
+                    {
+                        builder.add(entry.getKey(), entry.getValue() + "");
+                    }
+                    body = builder.build();
+                }
+            }
+            else
+            {
+                MultipartBody.Builder builder = new MultipartBody.Builder().setType(MultipartBody.FORM);
+                for (Map.Entry<String, Object> entry : params.entrySet())
+                {
+                    builder.addFormDataPart(entry.getKey(), entry.getValue() + "");
+                }
+                for (Map.Entry<String, File> entry : files.entrySet())
+                {
+                    File file = entry.getValue();
+                    builder.addFormDataPart("file", file.getName(), RequestBody.create(MediaType.parse("file/*"), file));
+                }
+                body = builder.build();
+            }
+
+            Request.Builder builder = new Request.Builder().url(url).post(body);
+            for (Map.Entry<String, Object> entry : headers.entrySet())
+            {
+                try
+                {
+                    builder.addHeader(entry.getKey(), entry.getValue().toString());
+                } catch (Exception e)
+                {
+                }
+            }
+            return httpClient.newCall(builder.build()).execute();
+        }
+
+        /**
+         * 同步请求Bean
+         *
+         * @param type 0:Get请求  1：Post请求
+         */
+        private NetBean syncBean(int type)
+        {
+            NetBean bean = null;
+            try
+            {
+                response = null;
+                if (type == 0)
+                {
+                    response = syncResponseGet();
+                }
+                else
+                {
+                    response = syncResponsePost();
+                }
+
+                bean = new NetBean(response.body().string());
+                bean.response = response;
+            } catch (IOException e)
+            {
+                e.printStackTrace();
+                bean = new NetBean(e.toString());
+                bean.msg = NetBean.ERROR_LINK_MSG;
+                bean.code = NetBean.ERROR_LINK;
+                bean.codeString = NetBean.ERROR_LINK + "";
+            }
+            if (okBeanDealer != null && !noDealer)
+            {
+                final NetBean fBean = bean;
+                handler.post(new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        okBeanDealer.result(Link.this, fBean);
+                    }
+                });
+            }
+            return bean;
+        }
+
+        public NetBean syncGet()
+        {
+            return syncBean(0);
+        }
+
+        public NetBean syncPost()
+        {
+            return syncBean(1);
+        }
+
+        public NetFileBean syncGetFile()
+        {
+            isEnd = false;
+
+            NetFileBean bean = new NetFileBean();
+
+            try
+            {
+                String path = (save == null || save.isEmpty() ? HttpFileUtil.basePath + "down/" : save);
+                // 无文件名
+                if (path.lastIndexOf("/") == path.length() - 1)
+                {
+                    if (isAutoName)
+                    {
+                        path = path + System.currentTimeMillis() + "." + HttpFileUtil.getExtension(url);
+                    }
+                    else
+                    {
+                        path = path + HttpFileUtil.getUrlNameExt(url);
+                    }
+                }
+                // 无后缀
+                else if (path.lastIndexOf(".") < path.length() - 5)
+                {
+                    path = path + "." + HttpFileUtil.getExtension(url);
+                }
+                result = path;
+                // 保存
+                if (url.startsWith(HttpFileUtil.ASSETS))
+                {
+                    bean.init(HttpFileUtil.assetsToFile(url, path), result, null, null);
+                    return bean;
+                }
+
+                final Request.Builder builder = new Request.Builder().url(buildUrl(url, params));
+                for (Map.Entry<String, Object> entry : headers.entrySet())
+                {
+                    try
+                    {
+                        builder.addHeader(entry.getKey(), entry.getValue().toString());
+                    } catch (Exception e)
+                    {
+                    }
+                }
+
+                // 如果temp文件存在
+                final File tempFile = HttpFileUtil.getTemp(path, tempFlag);
+                if (tempFile.exists() && tempFile.length() > 0)
+                {
+                    // 不支持断点 或者 temp已过期
+                    if (!isUseTemp || System.currentTimeMillis() - tempFile.lastModified() > tempOutTime)
+                    {
+                        File file = toSyncGetFile(builder, -1);
+                        bean.init(file, result, response, this);
+                    }else
+                    {
+                        // 断点下载
+                        Response response = httpClient.newCall(builder.build()).execute();
+                        long contentLength = response.body().contentLength();
+                        builder.addHeader("RANGE", "bytes=" + (tempFile.length() - 1) + "-");
+                        response.close();
+
+                        File file = toSyncGetFile(builder, contentLength);
+                        bean.init(file, result, response, this);
+                    }
+                }
+                else
+                {
+                    File file = toSyncGetFile(builder, -1);
+                    bean.init(file, result, response, this);
+                }
+            }catch (Exception e)
+            {
+                bean.init(null, result, null, this);
+            }
+            return bean;
+        }
+
+        private File toSyncGetFile(Request.Builder builder, long maxLen) throws Exception
+        {
+            response = httpClient.newCall(builder.build()).execute();
+            File file = saveFile(result, maxLen, response, Link.this);
+            if (file != null)
+            {
+                return file;
+            }else
+            {
+                throw new Exception(result);
+            }
+        }
+
+        /**
+         * get请求
+         */
         public Link get()
         {
             isEnd = false;
@@ -562,7 +797,7 @@ public class LoeHttp
                 @Override
                 public void onResponse(Call call, Response response) throws IOException
                 {
-                    if(!isEnd)
+                    if (!isEnd)
                     {
                         Link.this.response = response;
                         result = response.body().string();
@@ -576,7 +811,7 @@ public class LoeHttp
                 @Override
                 public void onFailure(Call call, IOException e)
                 {
-                    if(!isEnd)
+                    if (!isEnd)
                     {
                         String s = e.getMessage();
                         if (s.contains("timed out"))
@@ -594,6 +829,9 @@ public class LoeHttp
             return this;
         }
 
+        /**
+         * post请求
+         */
         public Link post()
         {
             isEnd = false;
@@ -611,9 +849,11 @@ public class LoeHttp
                     MediaType JSON = MediaType.parse("application/json; charset=utf-8");
                     for (Map.Entry<String, Object> entry : params.entrySet())
                     {
-                        try {
+                        try
+                        {
                             paramJson.put(entry.getKey(), entry.getValue());
-                        } catch (JSONException e) {
+                        } catch (JSONException e)
+                        {
                             e.printStackTrace();
                         }
                     }
@@ -659,7 +899,7 @@ public class LoeHttp
                 @Override
                 public void onResponse(Call call, Response response) throws IOException
                 {
-                    if(!isEnd)
+                    if (!isEnd)
                     {
                         Link.this.response = response;
                         result = response.body().string();
@@ -673,7 +913,7 @@ public class LoeHttp
                 @Override
                 public void onFailure(Call call, IOException e)
                 {
-                    if(!isEnd)
+                    if (!isEnd)
                     {
                         String s = e.getMessage();
                         if (s.contains("timed out"))
@@ -726,7 +966,7 @@ public class LoeHttp
                     @Override
                     public void onChange(long len, long now)
                     {
-                        if(!isEnd)
+                        if (!isEnd)
                         {
                             Link.this.len = len;
                             Link.this.now = now;
@@ -740,7 +980,7 @@ public class LoeHttp
                     @Override
                     public void response(File file)
                     {
-                        if(!isEnd)
+                        if (!isEnd)
                         {
                             Message msg = new Message();
                             msg.what = OK;
@@ -752,7 +992,7 @@ public class LoeHttp
                     @Override
                     public void error()
                     {
-                        if(!isEnd)
+                        if (!isEnd)
                         {
                             Message msg = new Message();
                             msg.what = ERROR;
@@ -780,7 +1020,7 @@ public class LoeHttp
             if (tempFile.exists() && tempFile.length() > 0)
             {
                 // 不支持断点 或者 temp已过期
-                if(!isUseTemp || System.currentTimeMillis() - tempFile.lastModified() > tempOutTime )
+                if (!isUseTemp || System.currentTimeMillis() - tempFile.lastModified() > tempOutTime)
                 {
                     toGetFile(builder, -1);
                     return this;
@@ -791,7 +1031,7 @@ public class LoeHttp
                     @Override
                     public void onFailure(Call call, IOException e)
                     {
-                        if(!isEnd)
+                        if (!isEnd)
                         {
                             String s = e.getMessage();
                             result = s.isEmpty() ? e.toString() : s;
@@ -805,16 +1045,17 @@ public class LoeHttp
                     @Override
                     public void onResponse(Call call, Response response)
                     {
-                        if(!isEnd)
+                        if (!isEnd)
                         {
                             long contentLength = response.body().contentLength();
-                            builder.addHeader("RANGE", "bytes=" + (tempFile.length()-1) + "-");
+                            builder.addHeader("RANGE", "bytes=" + (tempFile.length() - 1) + "-");
                             response.close();
                             toGetFile(builder, contentLength);
                         }
                     }
                 });
-            }else
+            }
+            else
             {
                 toGetFile(builder, -1);
             }
@@ -828,23 +1069,24 @@ public class LoeHttp
                 @Override
                 public void onResponse(Call call, Response response)
                 {
-                    if(!isEnd)
+                    if (!isEnd)
                     {
                         Link.this.response = response;
                         Message msg = new Message();
-                        if(saveFile(result, maxLen, response, Link.this) != null)
+                        if (saveFile(result, maxLen, response, Link.this) != null)
                         {
-                            if(!isEnd)
+                            if (!isEnd)
                             {
                                 msg.what = OK;
                                 msg.obj = Link.this;
                                 handler.sendMessage(msg);
                             }
-                        }else
+                        }
+                        else
                         {
-                            if(!isEnd)
+                            if (!isEnd)
                             {
-                                if(result == null || result.isEmpty())
+                                if (result == null || result.isEmpty())
                                 {
                                     result = "下载出错";
                                 }
@@ -859,7 +1101,7 @@ public class LoeHttp
                 @Override
                 public void onFailure(Call call, IOException e)
                 {
-                    if(!isEnd)
+                    if (!isEnd)
                     {
                         String s = e.getMessage();
                         result = s.isEmpty() ? e.toString() : s;
