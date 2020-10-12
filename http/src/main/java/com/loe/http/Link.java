@@ -100,6 +100,12 @@ public class Link
         return this;
     }
 
+    public Link header(HashMap<String, Object> map)
+    {
+        headers.putAll(map);
+        return this;
+    }
+
     public Link param(String key, Object value)
     {
         if (value != null)

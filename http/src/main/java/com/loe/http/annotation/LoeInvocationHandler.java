@@ -7,6 +7,7 @@ import java.io.File;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.util.HashMap;
 
 public class LoeInvocationHandler implements InvocationHandler
 {
@@ -36,16 +37,19 @@ public class LoeInvocationHandler implements InvocationHandler
         boolean isJson = false;
         String tag = null;
 
+        HashMap<String, Object> headers = new HashMap<>();
+        HashMap<String, Object> params = new HashMap<>();
+
         if(method.getAnnotations().length > 0)
         {
             for (Annotation type : method.getAnnotations())
             {
-                if(type instanceof NO_DEALER)
+                if(type instanceof NO_DEAL)
                 {
                     noDealer = true;
                     continue;
                 }
-                if(type instanceof IS_JSON)
+                if(type instanceof JSON)
                 {
                     isJson = true;
                     continue;
@@ -53,6 +57,16 @@ public class LoeInvocationHandler implements InvocationHandler
                 if(type instanceof TAG)
                 {
                     tag = ((TAG) type).value();
+                    continue;
+                }
+                if(type instanceof FixHeader)
+                {
+                    headers.put(((FixHeader) type).k(), ((FixHeader) type).v());
+                    continue;
+                }
+                if(type instanceof FixParam)
+                {
+                    params.put(((FixParam) type).k(), ((FixParam) type).v());
                     continue;
                 }
 
@@ -91,6 +105,8 @@ public class LoeInvocationHandler implements InvocationHandler
         }
         if(link != null)
         {
+            link.header(headers);
+            link.param(params);
             if(noDealer) link.noDealer();
             if(isJson) link.isJson();
             if(tag != null) link.tag(tag);

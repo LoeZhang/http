@@ -10,5 +10,9 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Documented
 @Target(METHOD)
 @Retention(RUNTIME)
-public @interface IS_JSON
-{}
+public @interface FixHeader
+{
+    String k();
+
+    String v();
+}

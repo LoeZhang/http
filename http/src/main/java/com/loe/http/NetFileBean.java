@@ -1,5 +1,7 @@
 package com.loe.http;
 
+import com.loe.http.callback.CallBack;
+
 import java.io.File;
 
 import okhttp3.Response;
@@ -51,5 +53,25 @@ public class NetFileBean
     public String toString()
     {
         return msg + "";
+    }
+
+    ///////////////////// 扩展 ////////////////////////
+
+    public final NetFileBean success(CallBack callBack)
+    {
+        if(success)
+        {
+            callBack.callBack();
+        }
+        return this;
+    }
+
+    public final NetFileBean error(CallBack callBack)
+    {
+        if(!success)
+        {
+            callBack.callBack();
+        }
+        return this;
     }
 }

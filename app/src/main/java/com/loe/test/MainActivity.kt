@@ -29,7 +29,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope
         var link: Link? = null
         button.setOnClickListener()
         {
-            ts.go("哈哈", 123).ok()
+            ts.go().ok()
             {
                 textView.text = it.result
             }

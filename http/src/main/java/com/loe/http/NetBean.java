@@ -1,5 +1,6 @@
 package com.loe.http;
 
+import com.loe.http.callback.CallBack;
 import com.loe.http.callback.HttpPassCallBack;
 
 import org.json.JSONArray;
@@ -331,5 +332,34 @@ public class NetBean
     public String toString()
     {
         return result;
+    }
+
+    ///////////////////// 扩展 ////////////////////////
+
+    public final NetBean success(CallBack callBack)
+    {
+        if(success)
+        {
+            callBack.callBack();
+        }
+        return this;
+    }
+
+    public final NetBean error(CallBack callBack)
+    {
+        if(!success)
+        {
+            callBack.callBack();
+        }
+        return this;
+    }
+
+    public final NetBean result(CallBack callBack)
+    {
+        if(code != ERROR_LINK)
+        {
+            callBack.callBack();
+        }
+        return this;
     }
 }
