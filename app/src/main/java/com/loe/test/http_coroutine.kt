@@ -1,14 +1,11 @@
 package com.loe.test
 
-import com.loe.http.LoeHttp
+import com.loe.http.Link
 import com.loe.http.NetBean
 import com.loe.http.NetFileBean
 import kotlinx.coroutines.*
-import java.io.File
 
-fun link(url: String) = LoeHttp.Link(url)
-
-suspend fun LoeHttp.Link.withGet(): NetBean
+suspend fun Link.withGet(): NetBean
 {
     return withIOContext()
     {
@@ -16,7 +13,15 @@ suspend fun LoeHttp.Link.withGet(): NetBean
     }
 }
 
-suspend fun LoeHttp.Link.withPost(): NetBean
+suspend fun Link.withGetFile(): NetFileBean
+{
+    return withIOContext()
+    {
+        syncGetFile()
+    }
+}
+
+suspend fun Link.withPost(): NetBean
 {
     return withIOContext()
     {
@@ -24,12 +29,19 @@ suspend fun LoeHttp.Link.withPost(): NetBean
     }
 }
 
-
-suspend fun LoeHttp.Link.withGetFile(): NetFileBean
+suspend fun Link.withPut(): NetBean
 {
     return withIOContext()
     {
-        syncGetFile()
+        syncPut()
+    }
+}
+
+suspend fun Link.withDelete(): NetBean
+{
+    return withIOContext()
+    {
+        syncDelete()
     }
 }
 

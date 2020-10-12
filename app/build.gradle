@@ -33,12 +33,14 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.1.0'
     implementation 'androidx.core:core-ktx:1.0.2'
     testImplementation 'junit:junit:4.12'
-    implementation 'com.github.LoeZhang:mvp:0.6.1'
     androidTestImplementation 'androidx.test.ext:junit:1.1.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.1'
 
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.2"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.2"
+
+    implementation 'com.github.LoeZhang:mvp:0.6.1'
+    implementation 'com.github.LoeZhang:logger:0.1.2'
 
     implementation project(':http')
 //    implementation 'com.github.LoeZhang:http:0.0.7'

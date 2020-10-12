@@ -17,9 +17,9 @@ public class NetFileBean
 
     public File file;
 
-    public LoeHttp.Link link;
+    public Link link;
 
-    public void init(File file, String msg, Response response, LoeHttp.Link link)
+    public void init(File file, String msg, Response response, Link link)
     {
         success = file != null;
 

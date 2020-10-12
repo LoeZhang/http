@@ -13,11 +13,11 @@ import okhttp3.Response;
  */
 public class NetBean
 {
-    private String resultString;
+    private String result;
 
-    public String getResultString()
+    public String getResult()
     {
-        return resultString;
+        return result;
     }
 
     public static String KEY_MSG = "msg";
@@ -52,17 +52,19 @@ public class NetBean
 
     public static final int ERROR_JSON = -604725097;
     public static final int ERROR_LINK = -704725097;
+    public static final int ERROR_INTERCEPT = -804725097;
 
     public static String ERROR_JSON_MSG = "数据格式有误";
     public static String ERROR_LINK_MSG = "网络连接失败";
+    public static String ERROR_INTERCEPT_MSG = "请求被拦截";
 
-    public NetBean(String resultString)
+    public NetBean(String result)
     {
-        this.resultString = resultString;
+        this.result = result;
 
         try
         {
-            JSONObject json = new JSONObject(resultString);
+            JSONObject json = new JSONObject(result);
 
             msg = json.optString(KEY_MSG, "");
             code = json.optInt(KEY_CODE, 0);
@@ -78,7 +80,7 @@ public class NetBean
             code = ERROR_JSON;
             codeString = ERROR_JSON + "";
             success = false;
-            string = resultString;
+            string = result;
         }
 
         if(data == null) data = new JSONObject();
@@ -328,6 +330,6 @@ public class NetBean
     @Override
     public String toString()
     {
-        return msg;
+        return result;
     }
 }
