@@ -4,14 +4,17 @@ import com.loe.http.Link
 import com.loe.http.annotation.*
 import java.io.File
 
-interface TestInterface
-{
+interface TestInterface {
     @DELETE("test/request.php")
     @JSON
-    @Params("""
-        kjs = jdhdssssssssssssssss123
-        zzzzzlkjsj = hdhbbmxmxn2222
-    """)
+    @Headers(
+        "kjs = jdhdssssssssssssssss123",
+        "zzzzzlkjsj = hdhbbmxm33333333xn2222"
+    )
+    @Params(
+        "kjs = jdhdssssssssssssssss123",
+        "zzzzzlkjsj = hdhbbmxmxn22220000000000"
+    )
     fun go(
         @Param("名称") name: String = "大幅度发到付",
         @Header("some") age: Int = 9999999
