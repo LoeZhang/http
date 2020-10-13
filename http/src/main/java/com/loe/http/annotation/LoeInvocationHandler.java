@@ -59,14 +59,26 @@ public class LoeInvocationHandler implements InvocationHandler
                     tag = ((TAG) type).value();
                     continue;
                 }
-                if(type instanceof FixHeader)
+                if(type instanceof Headers)
                 {
-                    headers.put(((FixHeader) type).k(), ((FixHeader) type).v());
+                    String[] hs = ((Headers) type).value().trim().split("[\n|;]+");
+                    for (String h : hs)
+                    {
+                        if(h.trim().isEmpty()) continue;
+                        String[] kv = h.trim().split("=");
+                        headers.put(kv[0].trim(), kv[1].trim());
+                    }
                     continue;
                 }
-                if(type instanceof FixParam)
+                if(type instanceof Params)
                 {
-                    params.put(((FixParam) type).k(), ((FixParam) type).v());
+                    String[] hs = ((Params) type).value().trim().split("[\n|;]+");
+                    for (String h : hs)
+                    {
+                        if(h.trim().isEmpty()) continue;
+                        String[] kv = h.trim().split("=");
+                        params.put(kv[0].trim(), kv[1].trim());
+                    }
                     continue;
                 }
 

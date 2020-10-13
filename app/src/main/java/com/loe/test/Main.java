@@ -13,5 +13,8 @@ class Main
 //                new Class[]{clazz},
 //                new LoeInvocationHandler(""));
 //        tf.go("是多少", "333");
+
+        String[] ss = "hdsh;\njdhd".split("[\n|;]+");
+        System.out.println(ss[1]);
     }
 }

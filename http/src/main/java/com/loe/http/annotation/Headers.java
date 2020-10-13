@@ -10,9 +10,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Documented
 @Target(METHOD)
 @Retention(RUNTIME)
-public @interface FixHeader
+public @interface Headers
 {
-    String k();
-
-    String v();
+    String value();
 }

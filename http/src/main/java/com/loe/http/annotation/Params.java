@@ -1,6 +1,7 @@
 package com.loe.http.annotation;
 
 import java.lang.annotation.Documented;
+import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
@@ -11,9 +12,8 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Documented
 @Target(METHOD)
 @Retention(RUNTIME)
-public @interface FixParam
+public @interface Params
 {
-    String k();
-
-    String v();
+    String value();
 }
+
