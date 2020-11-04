@@ -2,6 +2,7 @@ package com.loe.test
 
 import com.loe.http.Link
 import com.loe.http.annotation.*
+import org.json.JSONObject
 import java.io.File
 
 interface TestInterface {
@@ -17,6 +18,8 @@ interface TestInterface {
     )
     fun go(
         @Param("名称") name: String = "大幅度发到付",
+        @Param("json测") jc: JSONObject = JSONObject()
+            .put("", ""),
         @Header("some") age: Int = 9999999
     ): Link
 
