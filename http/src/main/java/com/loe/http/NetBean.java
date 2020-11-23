@@ -22,8 +22,8 @@ public class NetBean
     }
 
     public static String KEY_MSG = "msg";
-    public static String  KEY_CODE = "code";
-    public static String  KEY_DATA = "data";
+    public static String KEY_CODE = "code";
+    public static String KEY_DATA = "data";
     public static HttpPassCallBack PASS_SUCCESS = new HttpPassCallBack()
     {
         @Override
@@ -84,14 +84,23 @@ public class NetBean
             string = result;
         }
 
-        if(data == null) data = new JSONObject();
-        if(array == null) array = new JSONArray();
+        if (data == null)
+        {
+            data = new JSONObject();
+        }
+        if (array == null)
+        {
+            array = new JSONArray();
+        }
     }
 
     public String gotString(String key, String defaultValue)
     {
         String s = data.optString(key, defaultValue);
-        if(s == null || s == "null") return defaultValue;
+        if (s == null || s == "null")
+        {
+            return defaultValue;
+        }
         return s;
     }
 
@@ -107,7 +116,7 @@ public class NetBean
 
     public int gotInt(String key)
     {
-        return gotInt(key,0);
+        return gotInt(key, 0);
     }
 
     public long gotLong(String key, long defaultValue)
@@ -143,7 +152,10 @@ public class NetBean
     public String gotDoubleString(String key, String defaultValue)
     {
         double d = gotDouble(key, Double.MAX_VALUE);
-        if (d == Double.MAX_VALUE) return defaultValue;
+        if (d == Double.MAX_VALUE)
+        {
+            return defaultValue;
+        }
         long l = (long) d;
         return d - l == 0 ? l + "" : d + "";
     }
@@ -158,14 +170,15 @@ public class NetBean
     public JSONObject gotJson(String key)
     {
         JSONObject o = data.optJSONObject(key);
-        try
+        if (o == null)
         {
-            if (o == null)
+            try
             {
                 return new JSONObject(data.optString(key));
+            } catch (Exception e)
+            {
+                return new JSONObject();
             }
-        } catch (Exception e)
-        {
         }
         return o;
     }
@@ -173,14 +186,15 @@ public class NetBean
     public JSONArray gotArray(String key)
     {
         JSONArray o = data.optJSONArray(key);
-        try
+        if (o == null)
         {
-            if (o == null)
+            try
             {
                 return new JSONArray(data.optString(key));
+            } catch (Exception e)
+            {
+                return new JSONArray();
             }
-        } catch (Exception e)
-        {
         }
         return o;
     }
@@ -190,7 +204,10 @@ public class NetBean
     public String gotString(int i, String defaultValue)
     {
         String s = array.optString(i, defaultValue);
-        if(s == null || s == "null") return defaultValue;
+        if (s == null || s == "null")
+        {
+            return defaultValue;
+        }
         return s;
     }
 
@@ -206,7 +223,7 @@ public class NetBean
 
     public int gotInt(int i)
     {
-        return gotInt(i,0);
+        return gotInt(i, 0);
     }
 
     public long gotLong(int i, long defaultValue)
@@ -242,7 +259,10 @@ public class NetBean
     public String gotDoubleString(int i, String defaultValue)
     {
         double d = gotDouble(i, Double.MAX_VALUE);
-        if (d == Double.MAX_VALUE) return defaultValue;
+        if (d == Double.MAX_VALUE)
+        {
+            return defaultValue;
+        }
         long l = (long) d;
         return d - l == 0 ? l + "" : d + "";
     }
@@ -257,14 +277,15 @@ public class NetBean
     public JSONObject gotJson(int i)
     {
         JSONObject o = array.optJSONObject(i);
-        try
+        if (o == null)
         {
-            if (o == null)
+            try
             {
                 return new JSONObject(array.optString(i));
+            } catch (Exception e)
+            {
+                return new JSONObject();
             }
-        } catch (Exception e)
-        {
         }
         return o;
     }
@@ -272,18 +293,18 @@ public class NetBean
     public JSONArray gotArray(int i)
     {
         JSONArray o = array.optJSONArray(i);
-        try
+        if (o == null)
         {
-            if (o == null)
+            try
             {
                 return new JSONArray(array.optString(i));
+            } catch (Exception e)
+            {
+                return new JSONArray();
             }
-        } catch (Exception e)
-        {
         }
         return o;
     }
-
 
     public void setDataKey(String key)
     {
@@ -312,7 +333,7 @@ public class NetBean
 
     public String getHeader(String key)
     {
-        if(response != null)
+        if (response != null)
         {
             return response.header(key, "");
         }
@@ -321,7 +342,7 @@ public class NetBean
 
     public String getHeaderString()
     {
-        if(response != null)
+        if (response != null)
         {
             return response.headers().toString();
         }
@@ -338,7 +359,7 @@ public class NetBean
 
     public final NetBean success(CallBack callBack)
     {
-        if(success)
+        if (success)
         {
             callBack.callBack();
         }
@@ -347,7 +368,7 @@ public class NetBean
 
     public final NetBean error(CallBack callBack)
     {
-        if(!success)
+        if (!success)
         {
             callBack.callBack();
         }
@@ -356,7 +377,7 @@ public class NetBean
 
     public final NetBean result(CallBack callBack)
     {
-        if(code != ERROR_LINK)
+        if (code != ERROR_LINK)
         {
             callBack.callBack();
         }
